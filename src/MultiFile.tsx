@@ -2,10 +2,11 @@ import "./App.css";
 import { generateClient } from "aws-amplify/api";
 import { uploadData, getUrl, remove } from "aws-amplify/storage";
 import React, { useState } from "react";
+
 import type { Schema } from "../amplify/data/resource";
+
 import "@aws-amplify/ui-react/styles.css";
 import { withAuthenticator } from "@aws-amplify/ui-react";
-import { Interactions } from "@aws-amplify/interactions";
 
 // Generating the client
 const client = generateClient<Schema>({
@@ -17,6 +18,7 @@ function App({ signOut, user }) {
   const [currentPhotoAlbum, setCurrentPhotoAlbum] = useState<PhotoAlbum | null>(
     null
   );
+
   // Used to display images for current photoAlbum:
   const [currentImages, setCurrentImages] = useState<
     (string | null | undefined)[] | null | undefined
@@ -41,7 +43,7 @@ function App({ signOut, user }) {
 
       // Upload the Storage file:
       const result = await uploadData({
-        path: `images/${photoAlbum.id}-${file.name}`,
+        path: `${photoAlbum.id}-${file.name}`,
         data: file,
         options: {
           contentType: "image/png", // contentType is optional
@@ -82,6 +84,10 @@ function App({ signOut, user }) {
     if (!e.target.files) return;
 
     try {
+      const photoAlbumDetails = {
+        name: `My first photoAlbum`,
+      };
+
       // Create the API record:
       const response = await client.models.PhotoAlbum.create({
         name: `My first photoAlbum`,
@@ -95,7 +101,7 @@ function App({ signOut, user }) {
       const imagePaths = await Promise.all(
         Array.from(e.target.files).map(async (file) => {
           const result = await uploadData({
-            path: `images/${photoAlbum.id}-${file.name}`,
+            path: `${photoAlbum.id}-${file.name}`,
             data: file,
             options: {
               contentType: "image/png", // contentType is optional
@@ -144,7 +150,7 @@ function App({ signOut, user }) {
       const newimagePaths = await Promise.all(
         Array.from(e.target.files).map(async (file) => {
           const result = await uploadData({
-            path: `images/${currentPhotoAlbum.id}-${file.name}`,
+            path: `${currentPhotoAlbum.id}-${file.name}`,
             data: file,
             options: {
               contentType: "image/png", // contentType is optional
@@ -197,64 +203,6 @@ function App({ signOut, user }) {
     }
   }
 
-  // async function test() {
-  //   import { generateClient } from "aws-amplify/api";
-  //   import { uploadData, getUrl } from "aws-amplify/storage";
-  //   import type { Schema } from "../amplify/data/resource";
-
-  //   // Generating the client
-  //   const client = generateClient<Schema>({
-  //     authMode: "apiKey",
-  //   });
-
-  //   // Create the API record:
-  //   const response = await client.models.PhotoAlbum.create({
-  //     name: `My first photoAlbum`,
-  //   });
-
-  //   const photoAlbum = response.data.createPhotoAlbum;
-
-  //   if (!photoAlbum) return;
-
-  //   // Upload all files to Storage:
-  //   const imagePaths = await Promise.all(
-  //     Array.from(e.target.files).map(async (file) => {
-  //       const result = await uploadData({
-  //         path: `images/${photoAlbum.id}-${file.name}`,
-  //         data: file,
-  //         options: {
-  //           contentType: "image/png", // contentType is optional
-  //         },
-  //       }).result;
-
-  //       return result.path;
-  //     })
-  //   );
-
-  //   const updatePhotoAlbumDetails = {
-  //     id: photoAlbum.id,
-  //     imagePaths: imagePaths,
-  //   };
-
-  //   // Add the file association to the record:
-  //   const updateResponse = await client.graphql({
-  //     query: mutations.updatePhotoAlbum,
-  //     variables: { input: updatePhotoAlbumDetails },
-  //   });
-
-  //   const updatedPhotoAlbum = updateResponse.data.updatePhotoAlbum;
-
-  //   // If the record has no associated file, we can return early.
-  //   if (!updatedPhotoAlbum.imageKeys?.length) return;
-
-  //   // Retrieve signed urls for all files:
-  //   const signedUrls = await Promise.all(
-  //     updatedPhotoAlbum?.imagePaths.map(
-  //       async (path) => await getUrl({ path: path! })
-  //     )
-  //   );
-  // }
-
   // Replace last image associated with current photoAlbum:
   async function updateLastImage(e: React.ChangeEvent<HTMLInputElement>) {
     if (!currentPhotoAlbum) return;
@@ -266,14 +214,14 @@ function App({ signOut, user }) {
     try {
       // Upload new file to Storage:
       const result = await uploadData({
-        path: `images/${currentPhotoAlbum.id}-${file.name}`,
+        path: `${currentPhotoAlbum.id}-${file.name}`,
         data: file,
         options: {
           contentType: "image/png", // contentType is optional
         },
       }).result;
 
-      const newFilePath = result.path;
+      const newFilepath = result.path;
 
       // Query existing record to retrieve currently associated files:
       const queriedResponse = await client.models.PhotoAlbum.get({
@@ -454,22 +402,6 @@ function App({ signOut, user }) {
     }
   }
 
-  async function getPhotoAlbums() {
-    try {
-      const userInput = "I want to reserve a hotel for tonight";
-
-      // Provide a bot name and user input
-      const response = await Interactions.send({
-        botName: "amplifySample",
-        message: userInput,
-      });
-      // Log chatbot response
-      console.log(response.messages[0].content);
-    } catch (error) {
-      console.error("Error getting photoAlbums: ", error);
-    }
-  }
-
   function clearLocalState() {
     setCurrentPhotoAlbum(null);
     setCurrentImages([]);
@@ -529,9 +461,6 @@ function App({ signOut, user }) {
       </div>
 
       <div className="button-container">
-        <button onClick={getPhotoAlbums} className="app-button">
-          invokeLex
-        </button>
         <button
           onClick={getImagesForPhotoAlbum}
           disabled={!currentPhotoAlbum || !currentImages}
