@@ -81,7 +81,7 @@ try {
 
     // Remove resources from the original connection stack
     connectionStack.node.children.forEach((child) => {
-      //connectionStack.node.tryRemoveChild(child.node.id);
+      connectionStack.node.tryRemoveChild(child.node.id);
     });
   }
 } catch (error) {
